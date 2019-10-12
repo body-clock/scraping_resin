@@ -42,9 +42,10 @@ def scrape_data_from_href(href):
 
     return dispensary_data
 
-def data_to_csv(all_data):
+
+def data_to_csv(all_data, csv_filename):
     csv_columns = ["name", "phone_number", "location", "email", "website"]
-    csv_file = "newyork_data.csv"
+    csv_file = csv_filename
     try:
         with open(csv_file, "w", newline='') as csvfile:
             writer = csv.DictWriter(csvfile, csv_columns)
@@ -55,10 +56,8 @@ def data_to_csv(all_data):
         print("IOError")
 
 
-
-scraping_url = "https://weedmaps.com/listings/in/united-states/new-york/manhattan"
+scraping_url = "https://weedmaps.com/listings/in/united-states/pennsylvania/philadelphia"
 scraping_class = "map-listings-list__ListItem-sc-1ynfzzj-1 bVQzPb"
 hrefs = get_dispensary_hrefs(scraping_url, scraping_class)
 all_data = [scrape_data_from_href(href) for href in hrefs]
-test_data = [scrape_data_from_href(href) for href in hrefs]
-data_to_csv(all_data)
+data_to_csv(all_data, "philadelphia_data.csv")
