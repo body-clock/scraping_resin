@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 import csv
 
-
 def get_dispensary_hrefs(url, div_class):
     r = requests.get(url)
     c = r.content
@@ -25,8 +24,9 @@ def scrape_data_from_href(href):
     dispensary_data["name"] = soup.find("h1", {"data-test-id": "listing-name"}).text
     dispensary_data["phone_number"] = soup.find("div", {"display": "none,none,none,block,block"}).text
     unshortened_location = soup.find("span", {"data-test-id": "listing-type"}).text
-    location_start_index = unshortened_location.find("•") + 2
-    dispensary_data["location"] = unshortened_location[location_start_index:]
+    location_start_index = unshortened_location.find("•")
+    dispensary_data["location"] = unshortened_location[location_start_index+2:]
+    dispensary_data["type_of_listing"] = unshortened_location[:location_start_index-1]
     dispensary_data["email"] = soup.find("div",
                                          {"class": "src__Box-sc-1sbtrzs-0 styled-components__DetailGridItem-d53rlt-0 "
                                                    "styled-components__Email-d53rlt-3 icSxPE"}).a.text
@@ -44,7 +44,7 @@ def scrape_data_from_href(href):
 
 
 def data_to_csv(all_data, csv_filename):
-    csv_columns = ["name", "phone_number", "location", "email", "website"]
+    csv_columns = ["name", "type_of_listing", "phone_number", "location", "email", "website"]
     csv_file = csv_filename
     try:
         with open(csv_file, "w", newline='') as csvfile:
