@@ -1,22 +1,35 @@
 from bs4 import BeautifulSoup
 import requests
 import csv
+import os
 
-def get_dispensary_hrefs(url, div_class):
+def get_city_hrefs(state_url):
+    r = requests.get(state_url)
+    c = r.content
+    soup = BeautifulSoup(c, "html.parser")
+    city_elements = soup.find_all("a", {"data-testid": "region-link"})
+    city_hrefs = [city_element["href"] for city_element in city_elements]
+
+    return city_hrefs
+
+
+# get the hrefs to all individual dispensary pages
+def get_dispensary_hrefs(url):
     r = requests.get(url)
     c = r.content
     soup = BeautifulSoup(c, "html.parser")
-    dispensary_elements = soup.find_all("div", {"class": div_class})
+    dispensary_element_class = "map-listings-list__ListItem-sc-1ynfzzj-1 bVQzPb"
+    dispensary_elements = soup.find_all("div", {"class": dispensary_element_class})
     dispensary_hrefs = [dispensary_element.a['href'] for dispensary_element in dispensary_elements]
 
     return dispensary_hrefs
 
 
+# scrape all relevant info from a given href
 def scrape_data_from_href(href):
     r = requests.get(f"https://weedmaps.com{href}/about")
     if r.status_code == 404:
         r = requests.get(f"https://weedmaps.com{href}")
-    print(r.url)
     c = r.content
     soup = BeautifulSoup(c, "html.parser")
 
@@ -25,8 +38,8 @@ def scrape_data_from_href(href):
     dispensary_data["phone_number"] = soup.find("div", {"display": "none,none,none,block,block"}).text
     unshortened_location = soup.find("span", {"data-test-id": "listing-type"}).text
     location_start_index = unshortened_location.find("•")
-    dispensary_data["location"] = unshortened_location[location_start_index+2:]
-    dispensary_data["type_of_listing"] = unshortened_location[:location_start_index-1]
+    dispensary_data["location"] = unshortened_location[location_start_index + 2:]
+    dispensary_data["type_of_listing"] = unshortened_location[:location_start_index - 1]
     dispensary_data["email"] = soup.find("div",
                                          {"class": "src__Box-sc-1sbtrzs-0 styled-components__DetailGridItem-d53rlt-0 "
                                                    "styled-components__Email-d53rlt-3 icSxPE"}).a.text
@@ -45,19 +58,13 @@ def scrape_data_from_href(href):
 
 def data_to_csv(all_data, csv_filename):
     csv_columns = ["name", "type_of_listing", "phone_number", "location", "email", "website"]
-    csv_file = csv_filename
     try:
-        with open(csv_file, "w", newline='') as csvfile:
+        file_exists = os.path.isfile(csv_filename)
+        with open(csv_filename, "a", newline='') as csvfile:
             writer = csv.DictWriter(csvfile, csv_columns)
-            writer.writeheader()
+            if not file_exists:
+                writer.writeheader()
             for data in all_data:
                 writer.writerow(data)
     except IOError:
         print("IOError")
-
-
-scraping_url = "https://weedmaps.com/listings/in/united-states/pennsylvania/philadelphia"
-scraping_class = "map-listings-list__ListItem-sc-1ynfzzj-1 bVQzPb"
-hrefs = get_dispensary_hrefs(scraping_url, scraping_class)
-all_data = [scrape_data_from_href(href) for href in hrefs]
-data_to_csv(all_data, "philadelphia_data.csv")
