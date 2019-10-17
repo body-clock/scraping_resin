@@ -43,7 +43,7 @@ def scrape_data_from_href(href):
     dispensary_data["email"] = soup.find("div",
                                          {"class": "src__Box-sc-1sbtrzs-0 styled-components__DetailGridItem-d53rlt-0 "
                                                    "styled-components__Email-d53rlt-3 icSxPE"}).a.text
-    if dispensary_data["email"] == "customerservice@weedmaps.com":
+    if dispensary_data["email"] == "customerservice@weedmaps.com" or dispensary_data["email"] == "test@test.com":
         dispensary_data["email"] = None
 
     try:
