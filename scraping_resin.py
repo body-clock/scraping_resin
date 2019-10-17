@@ -3,30 +3,35 @@ import requests
 import csv
 import os
 
-def get_city_hrefs(state_url):
-    r = requests.get(state_url)
+
+# get the page content from a given url
+def get_page_content(url):
+    r = requests.get(url)
     c = r.content
     soup = BeautifulSoup(c, "html.parser")
-    city_elements = soup.find_all("a", {"data-testid": "region-link"})
+
+    return soup
+
+
+# get the hrefs to all cities for a given state url
+def get_city_hrefs(state_url):
+    city_elements = get_page_content(state_url).find_all("a", {"data-testid": "region-link"})
     city_hrefs = [city_element["href"] for city_element in city_elements]
 
     return city_hrefs
 
 
 # get the hrefs to all individual dispensary pages
-def get_dispensary_hrefs(url):
-    r = requests.get(url)
-    c = r.content
-    soup = BeautifulSoup(c, "html.parser")
-    dispensary_element_class = "map-listings-list__ListItem-sc-1ynfzzj-1 bVQzPb"
-    dispensary_elements = soup.find_all("div", {"class": dispensary_element_class})
+def get_dispensary_hrefs(city_url):
+    dispensary_elements = get_page_content(city_url).find_all("div", {
+        "class": "map-listings-list__ListItem-sc-1ynfzzj-1 bVQzPb"})
     dispensary_hrefs = [dispensary_element.a['href'] for dispensary_element in dispensary_elements]
 
     return dispensary_hrefs
 
 
 # scrape all relevant info from a given href
-def scrape_data_from_href(href):
+def scrape_data_from_href(href):  # TODO pass the url as an argument
     r = requests.get(f"https://weedmaps.com{href}/about")
     if r.status_code == 404:
         r = requests.get(f"https://weedmaps.com{href}")
@@ -56,6 +61,7 @@ def scrape_data_from_href(href):
     return dispensary_data
 
 
+# write the data to a csv
 def data_to_csv(all_data, csv_filename):
     csv_columns = ["name", "type_of_listing", "phone_number", "location", "email", "website"]
     try:
